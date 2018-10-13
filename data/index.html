@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html charset=UTF-8" />
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1 user-scalable=no">
+    <title>ATTiny85</title>
+</head>
+
+<body>
+    <h1>ATTiny85</h1>
+    <div id="app">
+        <button id="btn" type="button">ON</button>
+    </div>
+    <script>
+        var ajax = (function () {
+            var ajax = {};
+
+            ajax.get = function (url) {
+                return prepareRequest({
+                    method: "GET",
+                    url: url
+                });
+            };
+            ajax.post = function (url, params = {}) {
+                return prepareRequest({
+                    method: "POST",
+                    url: url,
+                    body: params,
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
+            };
+            function prepareRequest(obj) {
+                return new Promise((resolve, reject) => {
+                    let xhr = new XMLHttpRequest();
+                    xhr.open(obj.method || "GET", obj.url);
+                    if (obj.headers) {
+                        Object.keys(obj.headers).forEach(key => {
+                            xhr.setRequestHeader(key, obj.headers[key]);
+                        });
+                    }
+                    xhr.onload = () => {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            resolve(xhr.response);
+                        } else {
+                            reject(xhr.statusText);
+                        }
+                    };
+                    xhr.onerror = () => reject(xhr.statusText);
+
+                    let body = "";
+                    if (obj.body) {
+                        body = Object.keys(obj.body).map((key) => {
+                            return encodeURIComponent(key).replace(/%20/g, '+') +
+                                '=' + encodeURIComponent(obj.body[key]).replace(/%20/g, '+');
+                        }).join('&');
+                    }
+
+
+                    xhr.send(body);
+                });
+            }
+
+            return ajax;
+        })();
+        var statusPina = false, loading = false;
+        var btn = document.getElementById('btn');
+        btn.addEventListener('click', () => {
+            loading = true;
+            btn.setAttribute('disabled', true);
+            ajax.get(!statusPina ? "/on" : "/off").then((result) => {
+                statusPina = !statusPina;
+                loading = false;
+                btn.innerHTML = statusPina ? 'OFF' : 'ON';
+                btn.removeAttribute('disabled');
+                console.log(statusPina)
+            }).catch((error) => {
+                loading = false;
+                btn.removeAttribute('disabled');
+                console.log('error', error);
+            });
+        }, false);
+
+    </script>
+</body>
+
+</html>
